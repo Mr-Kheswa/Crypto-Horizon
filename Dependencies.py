@@ -1,15 +1,3 @@
-"""
-Centralized third-party imports and shared configuration for the Crypto-Horizon
-project. Every module below imports from here instead of repeating boilerplate
-imports — this replaces the original notebook's `from Dependencies import *`
-wildcard pattern with an explicit, well-defined module.
-"""
-# Configure TensorFlow before importing it to suppress routine startup messages.
-import os
-
-# Keep TensorFlow's startup log spam down; only errors are shown.
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
-
 # Shared data-science, plotting, clustering, scaling, and metric libraries used by pipeline modules.
 import numpy as np
 import pandas as pd
