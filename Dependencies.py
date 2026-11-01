@@ -1,19 +1,28 @@
-# Shared data-science, plotting, clustering, scaling, and metric libraries used by pipeline modules.
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.graph_objects as go
+# ========================================================================================
+# CELL 1: PACKAGES AND ENVIRONMENT SETUP
+# ========================================================================================
+import os
+import json
+import plotly.io
+import webbrowser
+import numpy as np           # Used for handling arrays and mathematical arrays
+import pandas as pd          # Used for loading and managing the dataset table
+import seaborn as sns        # Used for drawing advanced statistical graphs and heatmaps
+import tensorflow as tf      # Used for hardware acceleration and deep learning engine backend
+import matplotlib.pyplot as plt    # Used for making the final prediction charts
+import plotly.graph_objects as go  # Used for creating interactive and zoomable charts
+import matplotlib.patches as mpatches # Used for drawing custom shapes and custom graph legends
 
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler  # Used to scale prices between 0 and 1
+from sklearn.metrics import mean_squared_error, r2_score  # Used to measure prediction error
+from sklearn.mixture import GaussianMixture     # Core AI clustering algorithm
+from sklearn.tree import DecisionTreeClassifier # Used for rule-based classification models
+from sklearn.cluster import KMeans    # Used for grouping data based on distance centers
+from keras.models import Sequential   # Used to build the layer-by-layer model
+from keras.layers import LSTM, Dense  # The deep learning layers we need
 
-# Shared Keras model, layer, and callback classes used to define/train the LSTM.
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, LSTM, Dense, Dropout
-from tensorflow.keras.callbacks import EarlyStopping
+# Lock random numbers so you get the exact same results every time you run this cell
+np.random.seed(42)
+tf.random.set_seed(42)
 
-# Apply one consistent plotting style to figures created across the project.
-sns.set_theme(style="whitegrid")
+print("Setup complete! & Ready to load your data.")
