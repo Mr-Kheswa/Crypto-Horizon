@@ -10,6 +10,8 @@ import datetime
 from Dependencies import *
 from sklearn.metrics import mean_absolute_error
 
+from Chatbot import CryptoHorizonAgent
+
 # Attempt to load web dashboard engine infrastructure
 try:
     import dash
@@ -20,21 +22,6 @@ try:
     HAS_DASH = True
 except ImportError:
     HAS_DASH = False
-
-# =========================================================================================
-# CHATBOT EXTENSION: IMPORTS & INITIALIZATION
-# =========================================================================================
-try:
-    from dash_chat import ChatComponent  # Native chat components for Dash layout
-except ImportError:
-    raise ImportError("Please run 'pip install dash-chat' in your terminal to use the chatbot interface.")
-
-from Chatbot import PipelineChatbotAgent
-
-# Instantiate your separate NLP engine module
-bot_agent = PipelineChatbotAgent()
-# =========================================================================================
-
 
 # -----------------------------------------------------------------------------------------
 # CORE DATA INGESTION ENGINE
@@ -172,17 +159,24 @@ def make_performance_plot(volatility_scale, active_mode):
 # INTERACTIVE SERVER APP RUNTIME DEFINITION
 # -----------------------------------------------------------------------------------------
 if HAS_DASH:
+    bot_agent = CryptoHorizonAgent()
     app = dash.Dash(__name__)
-    
+
+    initial_chat = [
+        html.Div([
+            html.Div("Agent", style={'fontWeight': 'bold', 'color': '#00F2FE', 'marginBottom': '4px'}),
+            html.Div(
+                "Hello analyst! I am the local Crypto Horizon agent. Ask me about the model, the regime logic, or the forecast pipeline.",
+                style={'color': '#E2E8F0', 'backgroundColor': '#111827', 'padding': '10px 12px', 'borderRadius': '8px'}
+            )
+        ], style={'marginBottom': '12px'})
+    ]
+
     app.layout = html.Div(style={'backgroundColor': '#0B0F19', 'padding': '20px', 'fontFamily': 'sans-serif'}, children=[
         html.H2("BINANCE BNB Prediction Dashboard", style={'color': '#00F2FE', 'textAlign': 'center', 'marginBottom': '20px'}),
-        
-        # NEW GRID CONTAINER: Splits the screen 70% Analytics / 30% Chatbot
+
         html.Div(style={'display': 'grid', 'gridTemplateColumns': '70% 30%', 'gap': '20px'}, children=[
-            
-            # LEFT SIDE: Wrap all of your original dashboard metrics and sliders inside this single list
             html.Div([
-                # Live Operational Telemetry HUD Panel
                 html.Div(style={
                     'backgroundColor': '#0F172A', 'padding': '25px', 'borderRadius': '12px',
                     'border': '1px solid #1E293B', 'color': '#E2E8F0', 'marginBottom': '20px'
@@ -196,8 +190,7 @@ if HAS_DASH:
                         html.Div([html.P("RESIDUAL VARIANCE", style={'color': '#94A3B8', 'fontSize': '12px', 'margin': '0'}), html.H3(id='hud-var', style={'color': '#EC4899', 'margin': '5px 0'})]),
                     ])
                 ]),
-                
-                # Operational Control Sliders and Mode Switchers Matrix
+
                 html.Div(style={'display': 'flex', 'gap': '20px', 'alignItems': 'center', 'marginBottom': '20px'}, children=[
                     html.Div(style={'flex': '1', 'color': '#94A3B8'}, children=[
                         html.Label("Volatility Scaling Factor:", style={'fontWeight': 'bold', 'display': 'block', 'marginBottom': '10px'}),
@@ -210,51 +203,78 @@ if HAS_DASH:
                     ]),
                     dcc.Store(id='active-mode-state', data='STANDARD')
                 ]),
-                
-                # Dynamic Vector Workspace Plot Canvas
+
                 dcc.Graph(id='live-performance-plot')
-            ]), # <-- End of your original left content array
-        
-            # =================================================================================
-            # RIGHT SIDE CHATBOT CONTAINER INSERTION
-            # =================================================================================
+            ]),
+
             html.Div(style={
                 'backgroundColor': '#0F172A', 'borderRadius': '12px', 'border': '1px solid #1E293B',
                 'display': 'flex', 'flexDirection': 'column', 'height': '680px', 'overflow': 'hidden'
             }, children=[
+                # Header of the conversation box.
                 html.Div("Crypto Agent", style={
-                    'backgroundColor': '#1E293B', 'padding': '15px', 'color': '#00F2FE', 
+                    'backgroundColor': '#1E293B', 'padding': '15px', 'color': '#00F2FE',
                     'fontWeight': 'bold', 'fontSize': '14px', 'borderBottom': '1px solid #334155'
                 }),
-                html.Div(style={'flex': '1', 'overflowY': 'auto', 'padding': '10px'}, children=[
-                    # ChatComponent HERE:
-                    ChatComponent(
-                        id="chatbot-interface",
-                        messages=[{"role": "assistant", "content": "Hello analyst! I am linked directly to your 2015-2025 pipeline layers. Ask me anything about our predictive vectors."}]
+
+                # Chat transcript area. This gets populated with user and AI messages.
+                # Scroll container for the chat transcript.
+                # We keep it in a single panel so the newest messages stay visible.
+                html.Div(id='chatbot-output', style={'flex': '1', 'overflowY': 'auto', 'padding': '10px'}, children=initial_chat),
+
+                # Input row. dcc.Input exposes n_submit, which fires when Enter is pressed.
+                # The input value is cleared after each successful send.
+                html.Div(style={'display': 'flex', 'gap': '8px', 'padding': '10px', 'borderTop': '1px solid #334155'}, children=[
+                    dcc.Input(
+                        id='chat-input',
+                        type='text',
+                        placeholder='Ask the agent...',
+                        value='',
+                        debounce=False,
+                        n_submit=0,
+                        style={
+                            'flex': '1',
+                            'padding': '10px 12px',
+                            'borderRadius': '8px',
+                            'border': '1px solid #334155',
+                            'backgroundColor': '#111827',
+                            'color': '#E2E8F0',
+                            'outline': 'none'
+                        }
+                    ),
+                    html.Button(
+                        'Send',
+                        id='chat-send',
+                        n_clicks=0,
+                        style={
+                            'padding': '10px 16px',
+                            'borderRadius': '8px',
+                            'border': 'none',
+                            'backgroundColor': '#00F2FE',
+                            'color': '#0B0F19',
+                            'fontWeight': 'bold',
+                            'cursor': 'pointer'
+                        }
                     )
                 ])
             ])
+        ])
+    ])
 
-            # =================================================================================
-            
-        ]) # <-- Closes the outer 70/30 Grid Div
-    ]) # <-- Closes the main main app.layout Div
-    
-    # State tracker callback rules mapping input variables to engine components
     @app.callback(
         Output('active-mode-state', 'data'),
-        [Input('btn-std', 'n_clicks'), Input('btn-risk', 'n_clicks'), Input('btn-stress', 'n_clicks')],
-        prevent_initial_call=True
+        [Input('btn-std', 'n_clicks'), Input('btn-risk', 'n_clicks'), Input('btn-stress', 'n_clicks')]
     )
-    def update_mode_state(*args):
+    def update_mode_state(btn_std, btn_risk, btn_stress):
         ctx = dash.callback_context
-        if not ctx.triggered:
-            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-            if button_id == 'btn-risk':
-                return 'RISK'
-            if button_id == 'btn-stress':
-                return 'STRESS'
+        if not ctx.triggered_id:
             return 'STANDARD'
+
+        if ctx.triggered_id == 'btn-risk':
+            return 'RISK'
+        if ctx.triggered_id == 'btn-stress':
+            return 'STRESS'
+        return 'STANDARD'
 
     @app.callback(
         [Output('live-performance-plot', 'figure'),
@@ -267,38 +287,79 @@ if HAS_DASH:
         fig, metrics = make_performance_plot(vol_scale, mode)
         return fig, metrics['r2'], metrics['hit_rate'], metrics['rmse'], metrics['mae'], metrics['max_drift'], metrics['var']
 
-# =========================================================================================
-# CHATBOT EVENT CALLBACK ROUTER
-# =========================================================================================
-@app.callback(
-    Output("chatbot-interface", "messages"),
-    Input("chatbot-interface", "messages"),
-    prevent_initial_call=True
-)
-def handle_chatbot_response(chat_history):
-    # Debug: Check if Dash is even recognizing the trigger event
-    if not chat_history:
-        return dash.no_update
-        
-    # Ensure the event was fired because a USER typed a message string
-    if chat_history[-1]["role"] == "user":
-        
-        # 1. Grab what the user typed into the input line
-        user_prompt = chat_history[-1]["content"]
-        
+    # -------------------------------------------------------------------------
+    # CHATBOT INTERACTION CALLBACK
+    # -------------------------------------------------------------------------
+    # This callback listens for both the Send button and the Enter key.
+    # The Enter key triggers dcc.Input.n_submit, while the button triggers n_clicks.
+    # After a valid message is sent, the textbox is reset to an empty string.
+    
+    @app.callback(
+        [Output('chatbot-output', 'children'),
+         Output('chat-input', 'value')],
+        [Input('chat-send', 'n_clicks'),
+         Input('chat-input', 'n_submit')],
+        [State('chat-input', 'value'),
+         State('chatbot-output', 'children')],
+        prevent_initial_call=True
+    )
+    def handle_chatbot_response(n_clicks, n_submit, user_prompt, chat_messages):
+        # Ignore empty submissions so the textbox does not send blank messages.
+        if not user_prompt or not str(user_prompt).strip():
+            return (chat_messages or initial_chat), ""
+
+        # Show the user's message in the conversation history.
+        user_message = html.Div([
+            html.Div('You', style={'fontWeight': 'bold', 'color': '#F8FAFC', 'marginBottom': '4px'}),
+            html.Div(
+                user_prompt,
+                style={'color': '#E2E8F0', 'backgroundColor': '#1F2937', 'padding': '10px 12px', 'borderRadius': '8px'}
+            )
+        ], style={'marginBottom': '12px'})
+
+        # Send the prompt to the local project agent.
         try:
-            # 2. Asynchronously stream it to your clean Chatbot.py class file
-            ai_reply = bot_agent.generate_response(chat_history[:-1] + [{"role": "user", "content": user_prompt}])
+            ai_reply = bot_agent.generate_response(user_prompt)
         except Exception as api_err:
-            ai_reply = f"API Execution Failure: {str(api_err)}"
-            
-        # 3. Cleanly append the new AI assistant bubble dictionary onto the layout array
-        chat_history.append({"role": "assistant", "content": ai_reply})
-        return chat_history
+            ai_reply = f"Local agent error: {api_err}"
 
-    return dash.no_update
-# =========================================================================================
+        # Render the AI response in the conversation area.
+        assistant_message = html.Div([
+            html.Div('Agent', style={'fontWeight': 'bold', 'color': '#00F2FE', 'marginBottom': '4px'}),
+            html.Div(
+                ai_reply,
+                style={'color': '#E2E8F0', 'backgroundColor': '#111827', 'padding': '10px 12px', 'borderRadius': '8px'}
+            )
+        ], style={'marginBottom': '12px'})
 
+        # Preserve the full conversation while appending the latest user and AI responses.
+        messages = list(chat_messages or initial_chat)
+        messages.append(user_message)
+        messages.append(assistant_message)
+
+        # Important: return a blank value for the input box so the textbox clears immediately.
+        return messages, ""
+
+    # -------------------------------------------------------------------------
+    # AUTO-SCROLL SUPPORT
+    # -------------------------------------------------------------------------
+    # Dash does not automatically scroll the transcript to the newest entry, so we
+    # add a small JavaScript hook below to keep the view anchored to the bottom.
+    app.clientside_callback(
+        """
+        function(children) {
+            setTimeout(function() {
+                const node = document.getElementById('chatbot-output');
+                if (node) {
+                    node.scrollTop = node.scrollHeight;
+                }
+            }, 10);
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output('chatbot-output', 'children'),
+        Input('chatbot-output', 'children')
+    )
 # -----------------------------------------------------------------------------------------
 # ENVIRONMENT EXECUTION ORCHESTRATOR
 # -----------------------------------------------------------------------------------------
