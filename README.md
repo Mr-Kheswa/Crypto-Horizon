@@ -17,7 +17,7 @@ This project moves past basic chart patterns to examine the deep structural corr
 ## Installation & Prerequisites
 This system is tested on Python 3.10+ environments. Ensure you have the foundational scientific libraries and deep learning runtimes properly set up.
 To initialize your development workspace, execute the following command:
-`pip install numpy pandas scikit-learn tensorflow keras plotly dash seaborn matplotlib`
+`pip install numpy pandas scikit-learn tensorflow keras plotly dash seaborn matplotlib dash_chat openai`
 
 ## Code Module Walkthrough
 **Data Ingestion & Unsupervised Clustering (AI_unsupervised.py)**
